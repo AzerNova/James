@@ -4,14 +4,13 @@
 #intro{position:fixed;inset:0;z-index:2000;background:#000;display:grid;place-items:center;overflow:hidden;cursor:pointer;touch-action:none;overscroll-behavior:none;-webkit-tap-highlight-color:transparent;-webkit-user-select:none;user-select:none;-webkit-touch-callout:none;font-family:var(--mono,"Share Tech Mono",ui-monospace,Menlo,monospace)}
 html.intro-lock,html.intro-lock body{overflow:hidden!important;overscroll-behavior:none}
 #intro>canvas{position:absolute;inset:0;width:100%;height:100%;z-index:0;pointer-events:none}
-#intro .aura{position:absolute;left:50%;top:44%;width:min(130vw,960px);height:min(75vw,540px);transform:translate(-50%,-50%);background:radial-gradient(closest-side,rgba(200,25,25,.6),rgba(120,10,40,.2) 55%,transparent 78%);opacity:.12;z-index:0;pointer-events:none}
+#intro .aura{position:absolute;left:50%;top:44%;width:min(150vw,1240px);height:min(80vw,600px);transform:translate(-50%,-50%);background:radial-gradient(closest-side,rgba(200,25,25,.6),rgba(120,10,40,.2) 55%,transparent 78%);opacity:.12;z-index:0;pointer-events:none}
 #intro .flash{position:absolute;inset:0;background:radial-gradient(circle at 50% 44%,rgba(255,70,30,.8),rgba(150,0,10,.35) 45%,transparent 78%);opacity:0;z-index:1;pointer-events:none}
 #intro .vig{position:absolute;inset:0;z-index:1;pointer-events:none;background:radial-gradient(ellipse at center,transparent 32%,rgba(0,0,0,.55) 68%,rgba(0,0,0,.96) 100%)}
 #intro .stage{position:relative;z-index:2;display:flex;flex-direction:column;align-items:center;width:100%;padding:0 3vw}
-#intro .eyes{display:flex;justify-content:center;align-items:center;gap:clamp(6px,3vw,30px);width:min(94vw,780px)}
+#intro .eyes{display:flex;justify-content:center;align-items:center;gap:clamp(30px,26vw,264px);width:min(96vw,1060px)}
 #intro .eye{flex:1 1 0;min-width:0;max-width:360px;height:auto;overflow:visible;display:block;will-change:transform}
-#intro .eye.L{transform:rotate(7deg)}
-#intro .eye.R{transform:rotate(-7deg)}
+/* độ nghiêng mắt (eyeTilt) đã nằm sẵn trong path — không xoay CSS nữa để khỏi cộng dồn góc */
 #intro .ir,#intro .spr,#intro .sre,#intro .wr,#intro .wp{transform-box:fill-box;transform-origin:center}
 #intro .spr,#intro .sre{transform:scale(.001)}
 #intro .under{display:grid;place-items:start center;margin-top:clamp(16px,5vh,44px);min-height:104px;width:100%}
@@ -78,6 +77,8 @@ const INTRO_CFG={
   eyeColor:'#ec3b14',       // MÀU MẮT: Sharingan (đỏ cam)
   eyeColor2:'#a064ee',      // MÀU MẮT: Rinnegan (tím đậm, dùng cho vòng tròn, viền, quầng sáng)
   eyeColor2Light:'#dcc8ff', // MÀU MẮT: Rinnegan (tím nhạt, màu nền lan ra phủ kín mắt)
+  eyeTilt:16,               // (KHÔNG CÒN DÙNG: hình mắt là path cố định ALM) độ nghiêng (độ) — khóe NGOÀI cao, khóe TRONG thấp dần về phía mũi (14-18 giống ảnh mẫu)
+  eyeAspect:2.55,           // (KHÔNG CÒN DÙNG) tỷ lệ dài/cao (chiều rộng ÷ chiều cao; 2.4-2.8 = dài và sắc kiểu anime)
   hint:'Giữ để mở mắt',     // dòng gợi ý lúc mắt còn nhắm
   welcome:'Welcome',        // chữ chạy từng chữ cái
   sub:'Đăng nhập để vào làm bài', // dòng phụ dưới chữ Welcome
@@ -109,10 +110,48 @@ function shade(h,a){const [r,g,b]=rgb(h),t=a<0?0:255,p=Math.abs(a),f=v=>Math.rou
 function mix(a,b,t){const x=rgb(a),y=rgb(b);return 'rgb('+x.map((v,i)=>Math.round(v+(y[i]-v)*t)).join(',')+')'}
 const c1=hex(CFG.eyeColor,'ec3b14'),c2=hex(CFG.eyeColor2,'a064ee'),cl=hex(CFG.eyeColor2Light,'dcc8ff');
 const RC=shade(c2,-.42);            // màu vòng tròn tím đậm
-const SPR=104;                      // bán kính vùng lan (phủ kín hình hạnh nhân)
+const SPR=112;                      // bán kính vùng lan Rinnegan (phủ kín hình mắt mới: điểm xa nhất ~106 từ tâm mống mắt)
 
-/* ---- vẽ mắt (SVG tự vẽ) ---- */
-const ALM='M6 60C50 -8 150 -8 194 60C150 128 50 128 6 60Z';
+/* ---- vẽ mắt (SVG tự vẽ) ----
+   Hình mắt anime SẮC, DÀI, NGHIÊNG: khóe NGOÀI cao, khóe TRONG thấp dần về phía mũi (eyeTilt),
+   mí trên gần như đường thẳng chỉ vồng nhẹ (đỉnh lệch về khóe ngoài), mí dưới phình sâu hơn
+   và điểm sâu nhất lệch về khóe trong. Path sinh từ INTRO_CFG.eyeTilt + eyeAspect nên chỉnh
+   2 thông số đó là đổi được cả hình mắt (dùng chung cho clip, viền, bóng, glow, lan Rinnegan). */
+const EYE_W=188,EYE_X0=6,EYE_X1=194,EYE_MID=60;   /* khung hình mắt trong viewBox 200x120 */
+const EYE_IR=42;                                  /* bán kính mống mắt (đường kính ~0,4 chiều rộng mắt) */
+const EYE_IXF=.53;                                /* tâm mống mắt lệch về khóe trong: 54% chiều rộng */
+const EYE_IY=58;                                  /* tâm mống mắt hơi thấp so với đường giữa (60) */
+function eyeExtY(p0,c1,c2,p3){                    /* cực trị y của đường cubic (giải tích, không quét điểm) */
+  const y=function(t){const u=1-t;return u*u*u*p0[1]+3*u*u*t*c1[1]+3*u*t*t*c2[1]+t*t*t*p3[1]};
+  const A=c1[1]-p0[1],B=c2[1]-c1[1],C=p3[1]-c2[1],qa=A-2*B+C,qb=2*(B-A),ts=[0,1];
+  if(Math.abs(qa)<1e-9){if(Math.abs(qb)>1e-9){const t=-A/qb;if(t>0&&t<1)ts.push(t)}}
+  else{const d=qb*qb-4*qa*A;if(d>=0){const s=Math.sqrt(d);ts.push((-qb+s)/(2*qa),(-qb-s)/(2*qa))}}
+  let mn=1e9,mx=-1e9;for(let i=0;i<ts.length;i++){const t=ts[i];if(t<0||t>1)continue;const v=y(t);if(v<mn)mn=v;if(v>mx)mx=v}
+  return[mn,mx];
+}
+function eyeGeom(tilt,aspect){                    /* độ cao 2 khóe + 4 điểm điều khiển của 2 mí */
+  const H=EYE_W/Math.max(1.6,Math.min(3.4,+aspect||2.55));            /* chiều caobbox mục tiêu = rộng/eyeAspect */
+  let dy=EYE_W*Math.tan(Math.max(0,Math.min(26,+tilt||16))*Math.PI/180); /* drops khóe ngoài->khóe trong */
+  if(H-dy<12)dy=Math.max(0,H-12);                                     /* vẫn giữ độ cong cho 2 mí ở cấu hình cực đoan */
+  const y0=EYE_MID-dy/2,y1=EYE_MID+dy/2,free=Math.max(0,H-dy);
+  const QU=.4*free,QL=.6*free;                                        /* vồng mí trên 40% - mí dưới 60% phần cong */
+  let lo=.05,hi=6;                                                    /* giải vồng để chiều cao bbox đúng bằng H */
+  for(let i=0;i<48;i++){const s=(lo+hi)/2,e=eyeExtY([EYE_X0,y0],[EYE_X0+.3*EYE_W,y0-s*QU],[EYE_X1-.25*EYE_W,y1-2*s*QU],[EYE_X1,y1]);if(e[0]>y0-QU)lo=s;else hi=s}
+  const su=(lo+hi)/2;
+  lo=.05;hi=6;
+  for(let i=0;i<48;i++){const s=(lo+hi)/2,e=eyeExtY([EYE_X1,y1],[EYE_X1-.245*EYE_W,y1+s*QL],[EYE_X0+.277*EYE_W,y0+2.4*s*QL],[EYE_X0,y0]);if(e[1]<y1+QL)lo=s;else hi=s}
+  const sl=(lo+hi)/2;
+  return{y0:y0,y1:y1,
+    uC1:[EYE_X0+.3*EYE_W,y0-su*QU],uC2:[EYE_X1-.25*EYE_W,y1-2*su*QU],   /* mí trên: gần thẳng, vồng nhẹ lên */
+    dC1:[EYE_X1-.245*EYE_W,y1+sl*QL],dC2:[EYE_X0+.277*EYE_W,y0+2.4*sl*QL]}; /* mí dưới: phình sâu, lệch khóe trong */
+}
+function eyePathStr(g,mir){                       /* path mắt kín; mir=true = bản lật ngang (scaleX(-1)) cho mắt phải */
+  const fx=function(x){return mir?200-x:x},r=function(v){return Math.round(v*100)/100};
+  return 'M'+r(fx(EYE_X0))+' '+r(g.y0)
+    +'C'+r(fx(g.uC1[0]))+' '+r(g.uC1[1])+' '+r(fx(g.uC2[0]))+' '+r(g.uC2[1])+' '+r(fx(EYE_X1))+' '+r(g.y1)
+    +'C'+r(fx(g.dC1[0]))+' '+r(g.dC1[1])+' '+r(fx(g.dC2[0]))+' '+r(g.dC2[1])+' '+r(fx(EYE_X0))+' '+r(g.y0)+'Z';
+}
+const ALM='M6 27C50 15 120 15 150 25C176 41 190 73 194 99C150 107 70 103 40 81C20 65 10 47 6 27Z';  /* MẮT TRÁI — path cố định đo theo mắt mẫu: mí trên gần phẳng, mí dưới phình đầy, 2 khóe nhọn (ngoài ở trên, trong ở đáy). Mọi lớp đều dùng path này */
 /* MỘT cánh Mangekyō (nan từ tâm ra viền + đuôi lưỡi liềm cong dọc viền, đo theo ảnh mẫu); 3 cánh = rotate(0/120/240) */
 const BLADE='M10.43 -6.02 C10.36 -6.42 10.15 -7.50 10.01 -8.40 C9.86 -9.29 9.77 -10.27 9.55 -11.38 C9.33 -12.50 9.05 -13.53 8.71 -15.09 C8.37 -16.64 7.77 -19.69 7.54 -20.70 C7.30 -21.71 7.33 -21.08 7.28 -21.15 C7.99 -20.96 10.24 -20.52 11.53 -19.97 C12.81 -19.42 13.90 -18.66 14.98 -17.86 C16.07 -17.06 17.08 -16.12 18.05 -15.15 C19.03 -14.18 20.01 -13.16 20.85 -12.04 C21.70 -10.92 22.51 -9.70 23.11 -8.41 C23.71 -7.12 24.14 -5.72 24.47 -4.32 C24.80 -2.91 25.05 -1.45 25.11 -0.00 C25.16 1.45 24.92 3.05 24.81 4.37 C24.70 5.70 24.51 7.35 24.45 7.94 C24.77 7.40 26.04 5.98 26.41 4.66 C26.77 3.33 26.67 1.55 26.64 -0.00 C26.61 -1.55 26.43 -3.08 26.24 -4.63 C26.05 -6.17 25.90 -7.75 25.52 -9.29 C25.14 -10.82 24.58 -12.34 23.96 -13.83 C23.34 -15.33 22.59 -16.79 21.78 -18.28 C20.97 -19.77 20.13 -21.30 19.10 -22.76 C18.08 -24.23 16.94 -25.73 15.63 -27.07 C14.31 -28.41 12.82 -29.63 11.22 -30.81 C9.61 -31.99 7.68 -33.22 6.02 -34.14 C4.36 -35.07 2.06 -35.99 1.27 -36.36 L-2.54 -36.29 C-2.51 -35.89 -2.01 -36.01 -2.43 -34.76 C-2.85 -33.50 -4.32 -30.47 -5.04 -28.59 C-5.76 -26.71 -6.33 -24.82 -6.73 -23.48 C-7.14 -22.13 -7.17 -21.77 -7.48 -20.54 C-7.78 -19.32 -8.23 -17.66 -8.58 -16.14 C-8.92 -14.61 -9.31 -12.67 -9.55 -11.38 C-9.79 -10.09 -9.86 -9.29 -10.01 -8.40 C-10.15 -7.50 -10.36 -6.42 -10.43 -6.02 L0 0Z';
 function rings(){
@@ -126,11 +165,13 @@ function rings(){
          '<g><animateTransform attributeName="transform" type="rotate" from="360" to="0" dur="32s" repeatCount="indefinite"/>'+b+'</g>';
 }
 function eye(n,side){
+  const mir=side==='R',MIR=' transform="translate(200 0) scale(-1 1)"';   /* mắt phải = lật ngang mắt trái, không vẽ path riêng */
+  const IX=mir?200-(EYE_X0+EYE_IXF*EYE_W):EYE_X0+EYE_IXF*EYE_W,IY=EYE_IY; /* tâm mống mắt (lật x theo chiều mắt phải) */
   return '<svg class="eye '+side+'" viewBox="0 0 200 120" aria-hidden="true" focusable="false">'+
   '<defs>'+
-  '<clipPath id="ec'+n+'"><path d="'+ALM+'"/></clipPath>'+
-  '<radialGradient id="sc'+n+'" cx="50%" cy="50%" r="62%"><stop offset="0" stop-color="#f8f2e8"/><stop offset=".7" stop-color="#ddd3c6"/><stop offset="1" stop-color="#8f8279"/></radialGradient>'+
-  '<linearGradient id="sh'+n+'" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#000" stop-opacity=".78"/><stop offset=".3" stop-color="#000" stop-opacity=".1"/><stop offset=".7" stop-color="#000" stop-opacity="0"/><stop offset="1" stop-color="#000" stop-opacity=".55"/></linearGradient>'+
+  '<clipPath id="ec'+n+'"><path'+(mir?MIR:'')+' d="'+ALM+'"/></clipPath>'+
+  '<radialGradient id="sc'+n+'" cx="50%" cy="50%" r="62%"><stop offset="0" stop-color="#faf5ec"/><stop offset=".62" stop-color="#e2d8ca"/><stop offset="1" stop-color="#8e8178"/></radialGradient>'+
+  '<linearGradient id="sh'+n+'" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#000" stop-opacity=".82"/><stop offset=".34" stop-color="#000" stop-opacity=".14"/><stop offset=".66" stop-color="#000" stop-opacity="0"/><stop offset="1" stop-color="#000" stop-opacity=".5"/></linearGradient>'+
   '<radialGradient id="ir'+n+'"><stop offset="0" stop-color="'+shade(c1,.38)+'"/><stop offset=".55" stop-color="#'+c1+'"/><stop offset="1" stop-color="'+shade(c1,-.55)+'"/></radialGradient>'+
   '<radialGradient id="sp'+n+'"><stop offset="0" stop-color="#'+cl+'"/><stop offset=".6" stop-color="'+mix(cl,c2,.22)+'"/><stop offset="1" stop-color="'+mix(cl,c2,.5)+'"/></radialGradient>'+
   '<radialGradient id="gr'+n+'"><stop offset="0" stop-color="#'+c1+'" stop-opacity=".8"/><stop offset=".5" stop-color="#'+c1+'" stop-opacity=".25"/><stop offset="1" stop-color="#'+c1+'" stop-opacity="0"/></radialGradient>'+
@@ -140,24 +181,28 @@ function eye(n,side){
   '<g id="bl'+n+'" fill="#0a0204"><use href="#bd'+n+'"/><use href="#bd'+n+'" transform="rotate(120)"/><use href="#bd'+n+'" transform="rotate(240)"/></g>'+
   '<radialGradient id="mc'+n+'"><stop offset="0" stop-color="'+shade(c1,.5)+'"/><stop offset=".55" stop-color="'+shade(c1,.18)+'"/><stop offset="1" stop-color="#'+c1+'"/></radialGradient>'+
   '</defs>'+
-  '<circle class="gr" cx="100" cy="60" r="84" fill="url(#gr'+n+')" opacity="0"/>'+
-  '<circle class="gp" cx="100" cy="60" r="84" fill="url(#gp'+n+')" opacity="0"/>'+
-  '<g class="slw"><path d="M12 60H188" stroke="url(#sl'+n+')" stroke-width="8" stroke-linecap="round" fill="none" opacity=".22"/><path class="slit" d="M14 60H186" stroke="url(#sl'+n+')" stroke-width="1.8" stroke-linecap="round" fill="none"/></g>'+
+  '<circle class="gr" cx="'+IX+'" cy="'+IY+'" r="84" fill="url(#gr'+n+')" opacity="0"/>'+
+  '<circle class="gp" cx="'+IX+'" cy="'+IY+'" r="84" fill="url(#gp'+n+')" opacity="0"/>'+
   '<g clip-path="url(#ec'+n+')">'+
-   '<path d="'+ALM+'" fill="url(#sc'+n+')"/>'+
-   '<g transform="translate(100 60)"><g class="fol">'+
+   '<g'+(mir?MIR:'')+'>'+                                                        /* các lớp hình dáng mắt (lật ngang ở mắt phải) */
+    '<path d="'+ALM+'" fill="url(#sc'+n+')"/>'+                                  /* tròng trắng ngà, đậm dần ra mép */
+    '<path d="'+ALM+'" fill="url(#sh'+n+')"/>'+                                  /* dải bóng xám dưới mí trên (~34% phía trên), nhạt dần xuống */
+    '<path d="'+ALM+'" fill="none" stroke="#0a0a10" stroke-width="5.6"/>'+       /* viền đen đậm (nửa ngoài bị clip => chỉ còn nét trong) */
+   '</g>'+
+   '<g class="slw"><path d="M12 60H188" stroke="url(#sl'+n+')" stroke-width="8" stroke-linecap="round" fill="none" opacity=".22"/><path class="slit" d="M14 60H186" stroke="url(#sl'+n+')" stroke-width="1.8" stroke-linecap="round" fill="none"/></g>'+
+   '<g transform="translate('+IX+' '+IY+')"><g class="fol">'+
     '<g class="ir">'+
-      '<circle r="38" fill="url(#ir'+n+')"/>'+
-      '<circle r="38" fill="none" stroke="#1a0510" stroke-width="3.6"/>'+
-      '<circle r="35" fill="none" stroke="rgba(255,150,90,.35)" stroke-width=".8"/>'+
+      '<circle r="'+EYE_IR+'" fill="url(#ir'+n+')"/>'+
+      '<circle r="'+EYE_IR+'" fill="none" stroke="#1a0510" stroke-width="3.6"/>'+
+      '<circle r="'+(EYE_IR-3)+'" fill="none" stroke="rgba(255,150,90,.35)" stroke-width=".8"/>'+
       '<circle r="5" fill="#0a0208"/>'+
-      '<g class="sg" opacity="0">'+
+      '<g class="sg" opacity="0"><g transform="scale('+(EYE_IR/38).toFixed(4)+')">'+
         '<use class="mg2" href="#bl'+n+'" stroke="#0a0204" stroke-width="1.8" stroke-linejoin="round" opacity="0"/>'+
         '<use class="mg1" href="#bl'+n+'" stroke="#0a0204" stroke-width="1.2" stroke-linejoin="round" opacity="0"/>'+
         '<use class="mgm" href="#bl'+n+'" stroke="#0a0204" stroke-width=".5" stroke-linejoin="round"/>'+
         '<circle r="37" fill="none" stroke="#0a0204" stroke-width="1.6"/>'+
         '<circle r="7.4" fill="url(#mc'+n+')" stroke="#0a0204" stroke-width="1"/>'+
-      '</g>'+
+      '</g></g>'+
     '</g>'+
     '<circle class="spr" r="'+SPR+'" fill="url(#sp'+n+')"/>'+
     '<circle class="sre" r="'+SPR+'" fill="none" stroke="#fff" stroke-opacity=".9" stroke-width="2.4" vector-effect="non-scaling-stroke"/>'+
@@ -166,15 +211,17 @@ function eye(n,side){
     '<ellipse cx="-13" cy="-15" rx="6.5" ry="3.4" fill="#fff" opacity=".34" transform="rotate(-35 -13 -15)"/>'+
     '<circle cx="-6" cy="-9" r="1.7" fill="#fff" opacity=".55"/>'+
    '</g></g>'+
-   '<path d="'+ALM+'" fill="url(#sh'+n+')"/>'+
-   '<g class="lidU"><rect x="-10" y="-70" width="220" height="131" fill="#000"/></g>'+
-   '<g class="lidL"><rect x="-10" y="59" width="220" height="131" fill="#000"/></g>'+
+   '<g'+(mir?MIR:'')+'>'+                                                        /* hai mí trượt: closed che kín hết, open trượt ra ngoài bbox */
+    '<g class="lidU"><rect x="-10" y="-70" width="220" height="131" fill="#000"/></g>'+
+    '<g class="lidL"><rect x="-10" y="59" width="220" height="131" fill="#000"/></g>'+
+   '</g>'+
   '</g>'+
-  '<circle class="wr" cx="100" cy="60" r="22" fill="none" stroke="#ff3a1a" stroke-width="2.4" vector-effect="non-scaling-stroke" opacity="0"/>'+
-  '<circle class="wp" cx="100" cy="60" r="22" fill="none" stroke="#'+cl+'" stroke-width="1.6" vector-effect="non-scaling-stroke" opacity="0"/>'+
-  '<path class="outl" d="'+ALM+'" fill="none" stroke="#33353d" stroke-width="2.8" opacity="0"/>'+
-  '<path class="outg" d="'+ALM+'" fill="none" stroke="#'+c2+'" stroke-width="8" opacity="0"/>'+
-  '<path class="outp" d="'+ALM+'" fill="none" stroke="'+shade(c2,.55)+'" stroke-width="2.2" opacity="0"/>'+
+  '<path class="rim" d="'+ALM+'"'+(mir?MIR:'')+' fill="none" stroke="rgba(238,243,249,.35)" stroke-width="1.6" opacity="0"/>'+  /* đường sáng mảnh hơi trắng xám bên ngoài viền */
+  '<circle class="wr" cx="'+IX+'" cy="'+IY+'" r="22" fill="none" stroke="#ff3a1a" stroke-width="2.4" vector-effect="non-scaling-stroke" opacity="0"/>'+
+  '<circle class="wp" cx="'+IX+'" cy="'+IY+'" r="22" fill="none" stroke="#'+cl+'" stroke-width="1.6" vector-effect="non-scaling-stroke" opacity="0"/>'+
+  '<path class="outl" d="'+ALM+'"'+(mir?MIR:'')+' fill="none" stroke="#33353d" stroke-width="2.8" opacity="0"/>'+
+  '<path class="outg" d="'+ALM+'"'+(mir?MIR:'')+' fill="none" stroke="#'+c2+'" stroke-width="8" opacity="0"/>'+
+  '<path class="outp" d="'+ALM+'"'+(mir?MIR:'')+' fill="none" stroke="'+shade(c2,.55)+'" stroke-width="2.2" opacity="0"/>'+
   '</svg>';
 }
 eyes.innerHTML=eye(1,'L')+eye(2,'R');
@@ -342,6 +389,7 @@ function paint(v){
   lidL.forEach(n=>n.style.transform='translateY('+d+'px)');
   const so=Math.max(0,1-v*3.5).toFixed(3);slw.forEach(n=>n.style.opacity=so);
   outl.forEach(n=>n.style.opacity=v.toFixed(3));
+  Q('.rim').forEach(n=>n.style.opacity=v.toFixed(3));
   Q('.gr').forEach(n=>n.style.opacity=(.5*e).toFixed(3));
   aura.style.opacity=(.12+.4*e).toFixed(3);
   rp.style.strokeDashoffset=(119.38*(1-v)).toFixed(2);
@@ -526,12 +574,12 @@ function zoom(){
   if(ctx){fx.animate([{opacity:1},{opacity:0}],{duration:400,fill:'forwards'});timers.push(setTimeout(()=>{fxOn=false},450))}
   const rs=eyeEls.map(n=>n.getBoundingClientRect()),cxs=rs.map(r=>r.left+r.width/2),cy=(rs[0].top+rs[1].top+rs[0].height/2+rs[1].height/2)/2;
   const mx=(cxs[0]+cxs[1])/2,my=cy,w=parseFloat(getComputedStyle(eyeEls[0]).width)||rs[0].width;
-  const vw=innerWidth,vh=innerHeight,P=700,s0=(76*w/200)/P;
+  const vw=innerWidth,vh=innerHeight,P=700,s0=(2*EYE_IR*w/200)/P;
   const maxD=Math.max(Math.hypot(mx,my),Math.hypot(vw-mx,my),Math.hypot(mx,vh-my),Math.hypot(vw-mx,vh-my));
   const sMax=maxD*2.1/P;
   disc.style.left=(mx-P/2)+'px';disc.style.top=(my-P/2)+'px';
-  A(eyeEls[0],[{transform:'translateX(0px) rotate(7deg) scale(1)',opacity:1},{transform:'translateX('+(mx-cxs[0]).toFixed(1)+'px) rotate(0deg) scale(.8)',opacity:1,offset:.55},{transform:'translateX('+(mx-cxs[0]).toFixed(1)+'px) rotate(0deg) scale(.8)',opacity:0}],0,.65,'ease-in-out');
-  A(eyeEls[1],[{transform:'translateX(0px) rotate(-7deg) scale(1)',opacity:1},{transform:'translateX('+(mx-cxs[1]).toFixed(1)+'px) rotate(0deg) scale(.8)',opacity:1,offset:.55},{transform:'translateX('+(mx-cxs[1]).toFixed(1)+'px) rotate(0deg) scale(.8)',opacity:0}],0,.65,'ease-in-out');
+  A(eyeEls[0],[{transform:'translateX(0px) scale(1)',opacity:1},{transform:'translateX('+(mx-cxs[0]).toFixed(1)+'px) scale(.8)',opacity:1,offset:.55},{transform:'translateX('+(mx-cxs[0]).toFixed(1)+'px) scale(.8)',opacity:0}],0,.65,'ease-in-out');
+  A(eyeEls[1],[{transform:'translateX(0px) scale(1)',opacity:1},{transform:'translateX('+(mx-cxs[1]).toFixed(1)+'px) scale(.8)',opacity:1,offset:.55},{transform:'translateX('+(mx-cxs[1]).toFixed(1)+'px) scale(.8)',opacity:0}],0,.65,'ease-in-out');
   A(disc,[{opacity:0,transform:'scale('+s0+')'},{opacity:1,transform:'scale('+s0+')'}],.3,.3,'linear');
   A(disc,[{transform:'scale('+s0+')',opacity:1},{transform:'scale('+sMax+')',opacity:1}],.5,.9,'cubic-bezier(.55,0,.9,.4)');
   timers.push(setTimeout(()=>{
