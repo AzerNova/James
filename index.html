@@ -956,6 +956,38 @@ button,.btn,.opt,.cp,label{touch-action:manipulation}
 #home,#result{min-height:100vh;min-height:100dvh}
 .q{scroll-margin-top:calc(var(--bh,150px) + 12px)}
 #pal{top:calc(var(--bh,150px) + 12px);max-height:calc(100dvh - var(--bh,150px) - 24px);overflow:auto}
+/* FIX 2026-11-10: ngăn bảng câu hỏi tràn ngang và làm thanh cuộn đồng bộ giao diện */
+#pal{
+  min-width:0;
+  max-width:100%;
+  overflow-x:hidden;
+  overflow-y:auto;
+  overscroll-behavior:contain;
+  scrollbar-width:none;
+  -ms-overflow-style:none;
+}
+#pal>*{min-width:0;max-width:100%}
+#chips{
+  width:100%;
+  min-width:0;
+  grid-template-columns:repeat(5,minmax(0,1fr));
+}
+#pal .cp{
+  width:100%;
+  min-width:0;
+  max-width:100%;
+  padding-inline:0;
+  white-space:nowrap;
+}
+#pal .lg,#pal .cr-sm{
+  min-width:0;
+  max-width:100%;
+  overflow-wrap:anywhere;
+  word-break:normal;
+  line-height:1.4;
+}
+#pal .lg{font-size:.72rem;margin-top:8px}
+#pal::-webkit-scrollbar{display:none;width:0;height:0}
 .set,.stat,.q,.stk{-webkit-backdrop-filter:none;backdrop-filter:none;background:rgba(4,24,42,.82)}
 #resume{margin-bottom:10px;border-color:var(--am);color:var(--am);text-shadow:0 0 6px rgba(255,184,0,.5)}
 @media(min-width:1280px){:root{--w:1180px}.wrap{grid-template-columns:1fr 260px}.hero,.gal,.foot,.ticker{max-width:1180px}}
