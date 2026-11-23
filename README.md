@@ -57,7 +57,7 @@ Mã nguồn mở không có nghĩa là "không cần ghi công". Đây là sản
 - **Giữ nguyên** thông báo bản quyền và file `LICENSE` trong mọi bản sao hoặc phần đáng kể của mã (đây là **điều kiện bắt buộc** của giấy phép).
 - **Ghi công tác giả** và dẫn link về repository gốc khi bạn dùng lại, fork hoặc phát triển tiếp, ví dụ trong README hoặc phần giới thiệu của trang.
 - **Không nhận là của riêng mình**: không xóa tên tác giả, không đăng lại nguyên bản như sản phẩm của bạn, không bán lại nguyên bản.
-- **Ghi rõ nếu có chỉnh sửa**, ví dụ "dựa trên AzerNova của [Tên tác giả]".
+- **Ghi rõ nếu có chỉnh sửa**, ví dụ "dựa trên AzerNova của [ Huang Long ]".
 - Nếu bạn lấy **ý tưởng, bố cục hoặc hiệu ứng** làm cảm hứng, hãy ghi nguồn. Nếu định dùng cho **mục đích thương mại** (khóa học trả phí, sản phẩm bán), hãy mở một [Issue](../../issues) để trao đổi trước.
 
 Hai điều mình *mong* (ghi công và trao đổi trước khi thương mại hóa) là lời đề nghị lịch sự. Điều kiện **bắt buộc về mặt pháp lý** chỉ là những gì ghi trong file `LICENSE`.
@@ -131,7 +131,7 @@ Open source does not mean "no credit needed". A lot of creative work went into t
 - **Keep** the copyright notice and the `LICENSE` file in every copy or substantial portion of the code (this is a **legal requirement** of the license).
 - **Credit the author** and link back to the original repository when you reuse, fork or build on this project, for example in your README or an "About" section of the site.
 - **Do not claim it as your own**: do not remove the author's name, do not republish the original as your product, and do not resell it unchanged.
-- **State clearly if you made changes**, for example "based on AzerNova by [Author name]".
+- **State clearly if you made changes**, for example "based on AzerNova by [Huang Long]".
 - If you take **ideas, layout or visual effects** as inspiration, please credit the source. If you plan **commercial use** (paid courses, products for sale), please open an [Issue](../../issues) to talk first.
 
 The two things I *ask* (credit, and talking before commercial use) are polite requests. What is **legally binding** is only what the `LICENSE` file says.
