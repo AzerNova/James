@@ -70,7 +70,7 @@ Hai điều mình *mong* (ghi công và trao đổi trước khi thương mại 
 
 ### 📄 Giấy phép
 
-Phát hành theo giấy phép [MIT](LICENSE) (không áp dụng cho các tài nguyên bên thứ ba ở trên). Bản quyền © 2026 **[Tên tác giả]**.
+Phát hành theo giấy phép [MIT](LICENSE) (không áp dụng cho các tài nguyên bên thứ ba ở trên). Bản quyền © 2026 **[Huang Long]**.
 
 ### 💬 Đóng góp và liên hệ
 
@@ -144,7 +144,7 @@ The two things I *ask* (credit, and talking before commercial use) are polite re
 
 ### 📄 License
 
-Released under the [MIT License](LICENSE) (which does not extend to the third-party material above). Copyright © 2026 **[Author name]**.
+Released under the [MIT License](LICENSE) (which does not extend to the third-party material above). Copyright © 2026 **[ Huang Long ]**.
 
 ### 💬 Contributing and contact
 
